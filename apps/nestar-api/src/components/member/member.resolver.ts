@@ -13,7 +13,7 @@ export class MemberResolver {
 
 	@Mutation(() => String)
 	public async login(): Promise<string> {
-		console.log('Mutation: signup');
+		console.log('Mutation: login');
 		return await this.memberService.login();
 	}
 
