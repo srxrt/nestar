@@ -17,7 +17,7 @@ export class LoggingInterceptor implements NestInterceptor {
 			this.logger.log(`${this.stringify(gqlContext.getContext().req.body)}`, 'REQUEST');
 
 			return next.handle().pipe(
-				tap((context) => {
+				tap((context: ExecutionContext) => {
 					const responseTime = Date.now() - recordTime;
 					this.logger.log(`${this.stringify(context)} - ${responseTime}ms\n\n`, 'RESPONSE');
 				}),
