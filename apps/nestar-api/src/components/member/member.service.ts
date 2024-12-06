@@ -16,6 +16,7 @@ export class MemberService {
 
 	public async signup(input: MemberInput): Promise<Member> {
 		try {
+			console.log('MEMBER INPUT', input);
 			input.memberPassword = await this.authService.hashPassword(input.memberPassword);
 			const result: Member = await this.memberModel.create(input);
 			// TODO: Access token creation
@@ -28,8 +29,6 @@ export class MemberService {
 	}
 
 	public async login(input: LoginInput): Promise<Member> {
-		const { memberNick, memberPassword } = input;
-
 		const response = await this.memberModel.findOne({ memberNick: input.memberNick }).select('+memberPassword').exec();
 
 		if (!response || response.memberStatus === MemberStatus.DELETE) {
@@ -51,5 +50,12 @@ export class MemberService {
 
 	public async getMember(): Promise<string> {
 		return 'getMember executed';
+	}
+
+	public async getAllMembersByAdmin(): Promise<string> {
+		return 'getAllMembersByAdmin executed';
+	}
+	public async updateMemberByAdmin(): Promise<string> {
+		return 'updateMemberByAdmin executed';
 	}
 }
