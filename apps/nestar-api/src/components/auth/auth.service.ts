@@ -8,13 +8,16 @@ import { shapeIntoMongoObjectId } from '../../libs/config';
 @Injectable()
 export class AuthService {
 	constructor(private readonly jwtService: JwtService) {}
+
 	public async hashPassword(memberPassword: string): Promise<string> {
 		const salt = await bcrypt.genSalt();
 		return await bcrypt.hash(memberPassword, salt);
 	}
+
 	public async comparePasswords(memberPassword: string, hashedPassword: string): Promise<boolean> {
 		return await bcrypt.compare(memberPassword, hashedPassword);
 	}
+
 	public async createToken(member: Member): Promise<string> {
 		const payload: T = {};
 		Object.keys(member['_doc'] ? member['_doc'] : member).map((ele) => {
