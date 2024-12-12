@@ -1,9 +1,6 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsIn, IsInt, IsNotEmpty, IsOptional, Length, Min } from 'class-validator';
-import { MemberAuthType, MemberStatus, MemberType } from '../../enums/member.enum';
-import { availableAgentSorts, availableMemberSorts } from '../../config';
-import { Direction } from '../../enums/common.enum';
-import { PropertyLocation, PropertyType } from '../../enums/property.enum';
+import { IsInt, IsNotEmpty, IsOptional, Length, Min } from 'class-validator';
+import { PropertyLocation, PropertyStatus, PropertyType } from '../../enums/property.enum';
 import { ObjectId } from 'mongoose';
 
 @InputType()
@@ -61,6 +58,78 @@ export class PropertyInput {
 	@Field(() => Boolean, { nullable: true })
 	propertyRent?: boolean;
 
+	memberId?: ObjectId;
+
+	@IsOptional()
+	@Field(() => Date, { nullable: true })
+	constructedAt?: Date;
+}
+
+@InputType()
+export class PropertyUpdateInput {
+	@IsNotEmpty()
+	@Field(() => String)
+	_id: ObjectId;
+
+	@IsOptional()
+	@Field(() => PropertyType, { nullable: true })
+	propertyType?: PropertyType;
+
+	@IsOptional()
+	@Field(() => PropertyStatus, { nullable: true })
+	propertyStatus?: PropertyStatus;
+
+	@IsOptional()
+	@Field(() => PropertyLocation, { nullable: true })
+	propertyLocation?: PropertyLocation;
+
+	@IsOptional()
+	@Length(3, 100)
+	@Field(() => String, { nullable: true })
+	propertyAddress?: string;
+
+	@IsOptional()
+	@Length(3, 100)
+	@Field(() => String, { nullable: true })
+	propertyTitle?: string;
+
+	@IsOptional()
+	@Field(() => Number, { nullable: true })
+	propertyPrice?: number;
+
+	@IsOptional()
+	@Field(() => Number, { nullable: true })
+	propertySquare?: number;
+
+	@IsOptional()
+	@IsInt()
+	@Min(1)
+	@Field(() => Int, { nullable: true })
+	propertyBeds?: number;
+
+	@IsOptional()
+	@Field(() => Int, { nullable: true })
+	propertyRooms?: number;
+
+	@IsOptional()
+	@Field(() => [String], { nullable: true })
+	propertyImages?: string[];
+
+	@IsOptional()
+	@Length(5, 500)
+	@Field(() => String, { nullable: true })
+	propertyDesc?: string;
+
+	@IsOptional()
+	@Field(() => Boolean, { nullable: true })
+	propertyBarter?: boolean;
+
+	@IsOptional()
+	@Field(() => Boolean, { nullable: true })
+	propertyRent?: boolean;
+
+	soldAt?: Date;
+	deletedAt?: Date;
 	memberId?: ObjectId;
 
 	@IsOptional()

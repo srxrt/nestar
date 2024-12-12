@@ -4,7 +4,7 @@ import { Model, ObjectId } from 'mongoose';
 import { AuthService } from '../auth/auth.service';
 import { ViewService } from '../view/view.service';
 import { Property } from '../../libs/dto/property/property';
-import { PropertyInput } from '../../libs/dto/property/property.input';
+import { PropertyInput, PropertyUpdateInput } from '../../libs/dto/property/property.input';
 import { Message } from '../../libs/enums/common.enum';
 import { MemberService } from '../member/member.service';
 import { shapeIntoMongoObjectId } from '../../libs/config';
@@ -12,6 +12,7 @@ import { ViewInput } from '../../libs/dto/view/view.input';
 import { ViewGroup } from '../../libs/enums/view.enum';
 import { T } from '../../libs/types/common';
 import { PropertyStatus } from '../../libs/enums/property.enum';
+import * as moment from 'moment';
 
 @Injectable()
 export class PropertyService {
@@ -58,5 +59,25 @@ export class PropertyService {
 		}
 		targetProperty.memberData = await this.memberService.getMember(null, memberId);
 		return targetProperty;
+	}
+
+	public async updateProperty(memberId: ObjectId, input: PropertyUpdateInput): Promise<Property> {
+		let { propertyStatus, soldAt, deletedAt } = input;
+		const search: T = { _id: input._id, memberId: memberId, propertyStatus: PropertyStatus.ACTIVE };
+		if (propertyStatus === PropertyStatus.SOLD) soldAt = moment().toDate();
+		else if (propertyStatus === PropertyStatus.DELETE) deletedAt = moment().toDate();
+
+		const result: Property = await this.propertyModel.findOneAndUpdate(search, input, { new: true }).exec();
+
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+
+		if (soldAt || deletedAt) {
+			await this.memberService.memberStatsModifier({
+				_id: memberId,
+				targetKey: 'memberProperties',
+				modifier: -1,
+			});
+		}
+		return result;
 	}
 }
