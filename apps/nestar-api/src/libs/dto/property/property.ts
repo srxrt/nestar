@@ -51,7 +51,7 @@ export class Property {
 	propertyImages: string[];
 
 	@Field(() => String, { nullable: true })
-	propertDesc?: string;
+	propertyDesc?: string;
 
 	@Field(() => Boolean)
 	propertyBarter: boolean;
