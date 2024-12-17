@@ -31,6 +31,6 @@ export class BoardArticleResolver {
 	): Promise<BoardArticle> {
 		console.log('Query: getBoardArticle');
 		const articleId = shapeIntoMongoObjectId(input);
-		return await this.boardArticleSerivce(memberId, articleId);
+		return await this.boardArticleSerivce.getBoardArticle(memberId, articleId);
 	}
 }
