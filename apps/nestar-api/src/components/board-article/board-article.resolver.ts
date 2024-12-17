@@ -4,10 +4,11 @@ import { BoardArticle } from '../../libs/dto/board-article/board-article';
 import { BoardArticleInput } from '../../libs/dto/board-article/board-article.input';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { ObjectId } from 'mongoose';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
+import { BoardArticleUpdate } from '../../libs/dto/board-article/board-article.update';
 
 @Resolver()
 export class BoardArticleResolver {
@@ -32,5 +33,16 @@ export class BoardArticleResolver {
 		console.log('Query: getBoardArticle');
 		const articleId = shapeIntoMongoObjectId(input);
 		return await this.boardArticleSerivce.getBoardArticle(memberId, articleId);
+	}
+
+	@UseGuards(AuthGuard)
+	@Mutation(() => BoardArticle)
+	public async updateBoardArticle(
+		@Args('input') input: BoardArticleUpdate,
+		@AuthMember('_id') memeberId: ObjectId,
+	): Promise<BoardArticle> {
+		console.log('Mutation: updateBoardArticle');
+		input._id = shapeIntoMongoObjectId(input._id);
+		return await this.boardArticleSerivce.updateBoardArticle(memeberId, input);
 	}
 }

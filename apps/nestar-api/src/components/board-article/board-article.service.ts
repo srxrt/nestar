@@ -10,6 +10,7 @@ import { StatsModifier, T } from '../../libs/types/common';
 import { BoardArticleStatus } from '../../libs/enums/board-article.enum';
 import { ViewInput } from '../../libs/dto/view/view.input';
 import { ViewGroup } from '../../libs/enums/view.enum';
+import { BoardArticleUpdate } from '../../libs/dto/board-article/board-article.update';
 
 @Injectable()
 export class BoardArticleService {
@@ -49,6 +50,23 @@ export class BoardArticleService {
 		}
 
 		return targetArticle;
+	}
+
+	public async updateBoardArticle(memberId: ObjectId, input: BoardArticleUpdate): Promise<BoardArticle> {
+		const { articleStatus } = input;
+		const search: T = { _id: input._id, memberId: memberId, articleStatus: BoardArticleStatus.ACTIVE };
+
+		const result = await this.boardArticleModel.findOneAndUpdate(search, input, { new: true }).exec();
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+
+		if (articleStatus === BoardArticleStatus.DELETE) {
+			await this.memberService.memberStatsModifier({
+				_id: memberId,
+				targetKey: 'memberArticles',
+				modifier: -1,
+			});
+		}
+		return result;
 	}
 
 	public async boardArticleStatsEditor(input: StatsModifier): Promise<BoardArticle> {
