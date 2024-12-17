@@ -16,7 +16,6 @@ import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { ObjectId } from 'mongoose';
 import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
-import { Member } from '../../libs/dto/member/member';
 
 @Resolver()
 export class PropertyResolver {
