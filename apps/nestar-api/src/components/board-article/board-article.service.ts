@@ -2,7 +2,11 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Model, ObjectId } from 'mongoose';
 import { BoardArticle, BoardArticles } from '../../libs/dto/board-article/board-article';
 import { InjectModel } from '@nestjs/mongoose';
-import { BoardArticleInput, BoardArticlesInquiry } from '../../libs/dto/board-article/board-article.input';
+import {
+	AllBoardArticlesInquiry,
+	BoardArticleInput,
+	BoardArticlesInquiry,
+} from '../../libs/dto/board-article/board-article.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { MemberService } from '../member/member.service';
 import { ViewService } from '../view/view.service';
@@ -76,6 +80,35 @@ export class BoardArticleService {
 		if (articleCategory) match.articleCategory = articleCategory;
 		if (input?.search?.memberId) match.memberId = input.search?.memberId;
 		if (text) match.articleTitle = { $regex: new RegExp(text, 'i') };
+
+		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
+
+		const result = await this.boardArticleModel.aggregate([
+			{ $match: match },
+			{ $sort: sort },
+			{
+				$facet: {
+					list: [
+						{ $skip: (input.page - 1) * input.limit },
+						{ $limit: input.limit },
+						lookupMember,
+						{ $unwind: '$memberData' },
+					],
+					metaCounter: [{ $count: 'total' }],
+				},
+			},
+		]);
+
+		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
+		return result[0];
+	}
+
+	public async getAllBoardArticlesByAdmin(memberId: ObjectId, input: AllBoardArticlesInquiry): Promise<BoardArticles> {
+		const { articleCategory, articleStatus } = input?.search;
+		const match: T = {};
+		if (articleCategory) match.articleCategory = articleCategory;
+		if (articleStatus) match.articleStatus = articleStatus;
 
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
