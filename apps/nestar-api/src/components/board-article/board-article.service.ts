@@ -151,7 +151,7 @@ export class BoardArticleService {
 	}
 
 	public async removeBoardArticleByAdmin(articleId: ObjectId): Promise<BoardArticle> {
-		const result = this.boardArticleModel
+		const result = await this.boardArticleModel
 			.findOneAndDelete({
 				_id: articleId,
 				articleStatus: BoardArticleStatus.DELETE,
