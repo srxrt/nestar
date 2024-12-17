@@ -1,9 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Model, ObjectId } from 'mongoose';
-import { BoardArticle } from '../../libs/dto/board-article/board-article';
+import { BoardArticle, BoardArticles } from '../../libs/dto/board-article/board-article';
 import { InjectModel } from '@nestjs/mongoose';
-import { BoardArticleInput } from '../../libs/dto/board-article/board-article.input';
-import { Message } from '../../libs/enums/common.enum';
+import { BoardArticleInput, BoardArticlesInquiry } from '../../libs/dto/board-article/board-article.input';
+import { Direction, Message } from '../../libs/enums/common.enum';
 import { MemberService } from '../member/member.service';
 import { ViewService } from '../view/view.service';
 import { StatsModifier, T } from '../../libs/types/common';
@@ -11,6 +11,7 @@ import { BoardArticleStatus } from '../../libs/enums/board-article.enum';
 import { ViewInput } from '../../libs/dto/view/view.input';
 import { ViewGroup } from '../../libs/enums/view.enum';
 import { BoardArticleUpdate } from '../../libs/dto/board-article/board-article.update';
+import { lookupMember } from '../../libs/config';
 
 @Injectable()
 export class BoardArticleService {
@@ -67,6 +68,36 @@ export class BoardArticleService {
 			});
 		}
 		return result;
+	}
+
+	public async getBoardArticles(memberId: ObjectId, input: BoardArticlesInquiry): Promise<BoardArticles> {
+		const { articleCategory, text } = input?.search;
+		const match: T = { articleStatus: BoardArticleStatus.ACTIVE };
+		if (articleCategory) match.articleCategory = articleCategory;
+		if (input?.search?.memberId) match.memberId = input.search?.memberId;
+		if (text) match.articleTitle = { $regex: new RegExp(text, 'i') };
+
+		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
+
+		const result = await this.boardArticleModel.aggregate([
+			{ $match: match },
+			{ $sort: sort },
+			{
+				$facet: {
+					list: [
+						{ $skip: (input.page - 1) * input.limit },
+						{ $limit: input.limit },
+						lookupMember,
+						{ $unwind: '$memberData' },
+					],
+					metaCounter: [{ $count: 'total' }],
+				},
+			},
+		]);
+
+		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
+		return result[0];
 	}
 
 	public async boardArticleStatsEditor(input: StatsModifier): Promise<BoardArticle> {
