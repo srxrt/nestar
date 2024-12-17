@@ -133,6 +133,34 @@ export class BoardArticleService {
 		return result[0];
 	}
 
+	public async updateBoardArticleByAdmin(input: BoardArticleUpdate): Promise<BoardArticle> {
+		const { articleStatus } = input;
+		const search: T = { _id: input._id, articleStatus: BoardArticleStatus.ACTIVE };
+
+		const result = await this.boardArticleModel.findOneAndUpdate(search, input, { new: true }).exec();
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+
+		if (articleStatus === BoardArticleStatus.DELETE) {
+			await this.memberService.memberStatsModifier({
+				_id: result.memberId,
+				targetKey: 'memberArticles',
+				modifier: -1,
+			});
+		}
+		return result;
+	}
+
+	public async removeBoardArticleByAdmin(articleId: ObjectId): Promise<BoardArticle> {
+		const result = this.boardArticleModel
+			.findOneAndDelete({
+				_id: articleId,
+				articleStatus: BoardArticleStatus.DELETE,
+			})
+			.exec();
+		if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
+		return result;
+	}
+
 	public async boardArticleStatsEditor(input: StatsModifier): Promise<BoardArticle> {
 		console.log('Board Article Stats Modifier executed');
 		const { _id, targetKey, modifier } = input;
