@@ -151,6 +151,10 @@ export class BoardArticleService {
 	public async boardArticleStatsEditor(input: StatsModifier): Promise<BoardArticle> {
 		console.log('Board Article Stats Modifier executed');
 		const { _id, targetKey, modifier } = input;
-		return await this.boardArticleModel.findOneAndUpdate(_id, { $inc: { [targetKey]: modifier } }, { new: true });
+		return await this.boardArticleModel.findOneAndUpdate(
+			{ _id: _id },
+			{ $inc: { [targetKey]: modifier } },
+			{ new: true },
+		);
 	}
 }

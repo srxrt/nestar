@@ -16,7 +16,7 @@ import { MemberService } from '../member/member.service';
 import { lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
 import { ViewInput } from '../../libs/dto/view/view.input';
 import { ViewGroup } from '../../libs/enums/view.enum';
-import { T } from '../../libs/types/common';
+import { StatsModifier, T } from '../../libs/types/common';
 import { PropertyStatus } from '../../libs/enums/property.enum';
 import * as moment from 'moment';
 
@@ -32,7 +32,6 @@ export class PropertyService {
 	public async createProperty(input: PropertyInput): Promise<Property> {
 		try {
 			const result = await this.propertyModel.create(input);
-			//increase memberProperties
 			await this.memberService.memberStatsModifier({
 				_id: result.memberId,
 				targetKey: 'memberProperties',
@@ -48,9 +47,7 @@ export class PropertyService {
 	public async getProperty(memberId: ObjectId, propertyId: ObjectId): Promise<Property> {
 		const search: T = { _id: propertyId, propertyStatus: PropertyStatus.ACTIVE };
 		const targetProperty = await this.propertyModel.findOne(search).lean<Property>().exec();
-
 		if (!targetProperty) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		if (memberId) {
 			const viewInput: ViewInput = {
 				viewRefId: propertyId,
@@ -72,11 +69,8 @@ export class PropertyService {
 		const search: T = { _id: input._id, memberId: memberId, propertyStatus: PropertyStatus.ACTIVE };
 		if (propertyStatus === PropertyStatus.SOLD) soldAt = moment().toDate();
 		else if (propertyStatus === PropertyStatus.DELETE) deletedAt = moment().toDate();
-
 		const result: Property = await this.propertyModel.findOneAndUpdate(search, input, { new: true }).exec();
-
 		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-
 		if (soldAt || deletedAt) {
 			await this.memberService.memberStatsModifier({
 				_id: memberId,
@@ -90,9 +84,7 @@ export class PropertyService {
 	public async getProperties(memberId: ObjectId, input: PropertiesInquiry): Promise<Properties> {
 		const match: T = { propertyStatus: PropertyStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-
 		this.shapeMatchQuery(match, input);
-
 		console.log('MATCH:', match);
 		const result = await this.propertyModel
 			.aggregate([
@@ -111,20 +103,15 @@ export class PropertyService {
 				},
 			])
 			.exec();
-
 		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		return result[0];
 	}
 
 	public async getAgentProperties(memberId: ObjectId, input: AgentPropertiesInquiry): Promise<Properties> {
 		const { propertyStatus } = input.search;
 		if (propertyStatus === PropertyStatus.DELETE) throw new BadRequestException(Message.NOT_ALLOWED_REQUEST);
-
 		const match: T = { memberId: memberId, propertyStatus: propertyStatus ?? { $ne: PropertyStatus.DELETE } };
-
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-
 		const result = await this.propertyModel
 			.aggregate([
 				{ $match: match },
@@ -142,9 +129,7 @@ export class PropertyService {
 				},
 			])
 			.exec();
-
 		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		return result[0];
 	}
 
@@ -152,10 +137,8 @@ export class PropertyService {
 		const { propertyStatus, propertyLocationList } = input.search;
 		const match: T = {};
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-
 		if (propertyStatus) match.propertyStatus = propertyStatus;
 		if (propertyLocationList) match.propertyLocation = { $in: { propertyLocationList } };
-
 		const result = await this.propertyModel
 			.aggregate([
 				{ $match: match },
@@ -173,26 +156,20 @@ export class PropertyService {
 				},
 			])
 			.exec();
-
 		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		return result[0];
 	}
 
 	public async updatePropertyByAdmin(input: PropertyUpdateInput): Promise<Property> {
 		let { propertyStatus, soldAt, deletedAt } = input;
-
 		const search: T = {
 			_id: input._id,
 			propertyStatus: PropertyStatus.ACTIVE,
 		};
-
 		if (propertyStatus === PropertyStatus.SOLD) soldAt = moment().toDate();
 		if (propertyStatus === PropertyStatus.DELETE) deletedAt = moment().toDate();
-
 		const result = await this.propertyModel.findOneAndUpdate(search, input, { new: true }).exec();
 		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-
 		if (soldAt || deletedAt) {
 			await this.memberService.memberStatsModifier({
 				_id: result.memberId,
@@ -207,7 +184,6 @@ export class PropertyService {
 		const search: T = { _id: propertyId, propertyStatus: PropertyStatus.DELETE };
 		const result = await this.propertyModel.findOneAndDelete(search).exec();
 		if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
-
 		return result;
 	}
 
@@ -224,23 +200,25 @@ export class PropertyService {
 			options,
 			text,
 		} = input.search;
-
 		if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
 		if (locationList) match.propertyLocation = { $in: locationList };
 		if (roomsList) match.propertyRooms = { $in: roomsList };
 		if (bedsList) match.propertyBeds = { $in: bedsList };
 		if (typeList) match.propertyType = { $in: typeList };
-
 		if (pricesRange) match.propertyPrice = { $gte: pricesRange.start, $lte: pricesRange.end };
 		if (periodsRange) match.createdAt = { $gte: periodsRange.start, $lte: periodsRange.end };
 		if (squaresRange) match.propertySquare = { $gte: squaresRange.start, $lte: squaresRange.end };
-
 		if (text) match.propertyTitle = { $regex: new RegExp(text, 'i') };
-
 		if (options) {
 			match['$or'] = options.map((ele) => {
 				return { [ele]: true };
 			});
 		}
+	}
+
+	public async propertyStatsEditor(input: StatsModifier): Promise<Property> {
+		console.log('Property Stats Editor executed');
+		const { _id, targetKey, modifier } = input;
+		return await this.propertyModel.findOneAndUpdate(_id, { $inc: { [targetKey]: modifier } }, { new: true });
 	}
 }

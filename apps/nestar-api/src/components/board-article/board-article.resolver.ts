@@ -16,7 +16,6 @@ import { BoardArticleUpdate } from '../../libs/dto/board-article/board-article.u
 import { MemberType } from '../../libs/enums/member.enum';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Member } from '../../libs/dto/member/member';
 
 @Resolver()
 export class BoardArticleResolver {
