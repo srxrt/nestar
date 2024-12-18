@@ -36,11 +36,11 @@ export class BoardArticleService {
 			throw new InternalServerErrorException(Message.CREATE_FAILED);
 		}
 	}
+
 	public async getBoardArticle(memberId: ObjectId, articleId: ObjectId): Promise<BoardArticle> {
 		const search: T = { _id: articleId, articleStatus: BoardArticleStatus.ACTIVE };
 		const targetArticle = await this.boardArticleModel.findOne(search).lean<BoardArticle>().exec();
 		if (!targetArticle) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		if (memberId) {
 			const viewInput: ViewInput = {
 				viewRefId: articleId,
@@ -53,17 +53,14 @@ export class BoardArticleService {
 				targetArticle.articleViews++;
 			}
 		}
-
 		return targetArticle;
 	}
 
 	public async updateBoardArticle(memberId: ObjectId, input: BoardArticleUpdate): Promise<BoardArticle> {
 		const { articleStatus } = input;
 		const search: T = { _id: input._id, memberId: memberId, articleStatus: BoardArticleStatus.ACTIVE };
-
 		const result = await this.boardArticleModel.findOneAndUpdate(search, input, { new: true }).exec();
 		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-
 		if (articleStatus === BoardArticleStatus.DELETE) {
 			await this.memberService.memberStatsModifier({
 				_id: memberId,
@@ -80,9 +77,7 @@ export class BoardArticleService {
 		if (articleCategory) match.articleCategory = articleCategory;
 		if (input?.search?.memberId) match.memberId = input.search?.memberId;
 		if (text) match.articleTitle = { $regex: new RegExp(text, 'i') };
-
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-
 		const result = await this.boardArticleModel.aggregate([
 			{ $match: match },
 			{ $sort: sort },
@@ -98,9 +93,7 @@ export class BoardArticleService {
 				},
 			},
 		]);
-
 		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		return result[0];
 	}
 
@@ -109,9 +102,7 @@ export class BoardArticleService {
 		const match: T = {};
 		if (articleCategory) match.articleCategory = articleCategory;
 		if (articleStatus) match.articleStatus = articleStatus;
-
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-
 		const result = await this.boardArticleModel.aggregate([
 			{ $match: match },
 			{ $sort: sort },
@@ -127,19 +118,15 @@ export class BoardArticleService {
 				},
 			},
 		]);
-
 		if (!result) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
 		return result[0];
 	}
 
 	public async updateBoardArticleByAdmin(input: BoardArticleUpdate): Promise<BoardArticle> {
 		const { articleStatus } = input;
 		const search: T = { _id: input._id, articleStatus: BoardArticleStatus.ACTIVE };
-
 		const result = await this.boardArticleModel.findOneAndUpdate(search, input, { new: true }).exec();
 		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-
 		if (articleStatus === BoardArticleStatus.DELETE) {
 			await this.memberService.memberStatsModifier({
 				_id: result.memberId,

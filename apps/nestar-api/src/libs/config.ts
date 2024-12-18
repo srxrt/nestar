@@ -1,10 +1,8 @@
 import { ObjectId } from 'bson';
 
 export const availableAgentSorts = ['createdAt', 'updatedAt', 'memberLikes', 'memberViews', 'memberRank'];
-
+export const availableCommentSorts = ['createdAt', 'updatedAt'];
 export const availableMemberSorts = ['createdAt', 'updatedAt', 'memberLikes', 'memberViews'];
-
-export const availableOptions = ['propertyBarter', 'propertyRent'];
 export const availablePropertySorts = [
 	'createdAt',
 	'updatedAt',
@@ -13,6 +11,8 @@ export const availablePropertySorts = [
 	'propertyRank',
 	'propertyPrice',
 ];
+
+export const availableOptions = ['propertyBarter', 'propertyRent'];
 
 export const shapeIntoMongoObjectId = (target: any) => {
 	return typeof target === 'string' ? new ObjectId(target) : target;
